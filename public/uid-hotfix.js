@@ -10,6 +10,7 @@
     }catch(e){ try{ alert(txt); }catch(_){ } }
   }
   function newSid(){ return (Date.now().toString(36)+Math.random().toString(36).slice(2,8)); }
+function getGroupIdFromURL(){ try{ var u=new URL(location.href); return u.searchParams.get('g')||null; }catch(_){ return null; } }
 
   // Global, so inline onclick can always find it
   window.unlockWithUID = function(val){
@@ -38,7 +39,9 @@
       var sidKey = 'hs_sid_' + uid;
       var sid = null;
       try{ sid = localStorage.getItem(sidKey); }catch(_){ sid = null; }
-      if(!sid){ sid = newSid(); try{ localStorage.setItem(sidKey, sid);}catch(_){} }
+      if(!sid){ sid = newSid(); try{ localStorage.setItem(sidKey, sid);
+      try{ localStorage.setItem('hs_sid', sid); }catch(_){}
+      try{ localStorage.setItem('hs_sid_', sid); }catch(_){}}catch(_){} }
       // Also set ended=0
       try{ localStorage.setItem('hs_ended','0'); }catch(_){}
 
@@ -61,8 +64,8 @@
       // Inform server (best-effort)
       try{
         if(typeof fetch==='function'){
-          fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'uid',uid})})
-          .then(()=>fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'continue'})}))
+          fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'uid',uid,groupId:getGroupIdFromURL()})})
+          .then(()=>fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'continue',groupId:getGroupIdFromURL()})}))
           .catch(()=>{});
         }
       }catch(_){}
@@ -184,7 +187,7 @@
           fetch('/api/send', {
             method:'POST',
             headers:{'content-type':'application/json'},
-            body: JSON.stringify({ sessionId: sid, text: text })
+            body: JSON.stringify({ sessionId: sid, text: text, groupId: getGroupIdFromURL() })
           }).then(function(r){ return r.json().catch(function(){return null;}); })
             .then(function(res){
               if(res && res.reply){ addAgentBubble(String(res.reply)); }
