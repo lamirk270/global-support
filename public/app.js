@@ -230,18 +230,49 @@ const FLAGS = {
   CN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'><rect width='30' height='20' fill='#DE2910'/><polygon points='5,2 6,4.9 9,4.9 6.5,6.7 7.6,9.5 5,7.8 2.4,9.5 3.5,6.7 1,4.9 4,4.9' fill='#FFDE00'/><g fill='#FFDE00' transform='translate(5,5)'><polygon transform='rotate(23) translate(3,0)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(45) translate(4,1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(0) translate(4,-1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(-23) translate(3,2)' points='0,-.6 .6,0 0,.6 -.6,0'/></g></svg>`,
 
   // 香港 (繁体中文用香港区旗)
-  HK: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'>
-    <rect width='3' height='2' fill='#BA0000'/>
-    <g transform='translate(1.5,1) scale(.32)' fill='#fff'>
-      <g id='petal'>
-        <path d='M0,-80 C25,-58,25,-20,0,0 C-25,-20,-25,-58,0,-80Z'/>
-      </g>
-      <use href='#petal' transform='rotate(72)'/>
-      <use href='#petal' transform='rotate(144)'/>
-      <use href='#petal' transform='rotate(216)'/>
-      <use href='#petal' transform='rotate(288)'/>
-    </g>
-  </svg>`,
+  HK: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600'>
+  <!-- 红底 -->
+  <rect width='900' height='600' fill='#BA0000'/>
+  <!-- 白色洋紫荆（5瓣，不用 <use>，每瓣都独立一个 path） -->
+  <g transform='translate(450,300)' fill='#FFFFFF'>
+    <!-- 单瓣的基形，后面复制并旋转。曲线做了轻微 S 弯，接近官方比例 -->
+    <path d='M0,-170
+             C 55,-130, 60,-60,  0,-15
+             C -55,-60, -60,-130, 0,-170 Z' />
+    <path d='M0,-170
+             C 55,-130, 60,-60,  0,-15
+             C -55,-60, -60,-130, 0,-170 Z'
+          transform='rotate(72)'/>
+    <path d='M0,-170
+             C 55,-130, 60,-60,  0,-15
+             C -55,-60, -60,-130, 0,-170 Z'
+          transform='rotate(144)'/>
+    <path d='M0,-170
+             C 55,-130, 60,-60,  0,-15
+             C -55,-60, -60,-130, 0,-170 Z'
+          transform='rotate(216)'/>
+    <path d='M0,-170
+             C 55,-130, 60,-60,  0,-15
+             C -55,-60, -60,-130, 0,-170 Z'
+          transform='rotate(288)'/>
+  </g>
+
+  <!-- 每瓣内的小红星（五角，指向花蕊）-->
+  <g transform='translate(450,300)' fill='#BA0000'>
+    <!-- 画一个朝上的五角星函数：中心在(0,-105)，半径设为12/5，避免锯齿 -->
+    <polygon points='0,-93  4.5,-99 12,-100 6.5,-105 8,-113 0,-109 -8,-113 -6.5,-105 -12,-100 -4.5,-99'
+             transform='rotate(0)'/>
+    <polygon points='0,-93  4.5,-99 12,-100 6.5,-105 8,-113 0,-109 -8,-113 -6.5,-105 -12,-100 -4.5,-99'
+             transform='rotate(72)'/>
+    <polygon points='0,-93  4.5,-99 12,-100 6.5,-105 8,-113 0,-109 -8,-113 -6.5,-105 -12,-100 -4.5,-99'
+             transform='rotate(144)'/>
+    <polygon points='0,-93  4.5,-99 12,-100 6.5,-105 8,-113 0,-109 -8,-113 -6.5,-105 -12,-100 -4.5,-99'
+             transform='rotate(216)'/>
+    <polygon points='0,-93  4.5,-99 12,-100 6.5,-105 8,-113 0,-109 -8,-113 -6.5,-105 -12,-100 -4.5,-99'
+             transform='rotate(288)'/>
+  </g>
+</svg>`
+
 
   // 印度 (हिन्दी)
   IN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#ffffff'/><rect width='3' height='.6667' y='0' fill='#FF9933'/><rect width='3' height='.6667' y='1.3333' fill='#138808'/><circle cx='1.5' cy='1' r='.18' fill='none' stroke='#000088' stroke-width='.02'/><g stroke='#000088' stroke-width='.01'><line x1='1.5' y1='1' x2='1.5' y2='.82'/><line x1='1.5' y1='1' x2='1.64' y2='.86'/><line x1='1.5' y1='1' x2='1.68' y2='1'/><line x1='1.5' y1='1' x2='1.64' y2='1.14'/><line x1='1.5' y1='1' x2='1.5' y2='1.18'/><line x1='1.5' y1='1' x2='1.36' y2='1.14'/><line x1='1.5' y1='1' x2='1.32' y2='1'/><line x1='1.5' y1='1' x2='1.36' y2='.86'/></g></svg>`,
