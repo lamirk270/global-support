@@ -1,5 +1,5 @@
 (function(){
-  // Dynamic background (aurora-like blobs)
+  // ===== Background (保持你原有视觉，不改样式) =====
   const c=document.getElementById('bg'); const ctx=c.getContext('2d');
   function resize(){ c.width=innerWidth; c.height=innerHeight; } resize(); addEventListener('resize', resize);
   const blobs = Array.from({length:4}).map((_,i)=>({x:Math.random()*c.width,y:Math.random()*c.height,r:180+Math.random()*240,dx:(Math.random()*1.2+0.3)*(Math.random()<.5?-1:1),dy:(Math.random()*1.2+0.3)*(Math.random()<.5?-1:1),h: (i*90+200)%360}));
@@ -16,7 +16,6 @@
       if(b.x-b.r<0||b.x+b.r>c.width) b.dx*=-1;
       if(b.y-b.r<0||b.y+b.r>c.height) b.dy*=-1;
     }
-    // particles
     ctx.globalCompositeOperation='screen';
     ctx.fillStyle='rgba(150,180,255,.35)';
     for(const p of particles){ ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,Math.PI*2); ctx.fill(); p.y += p.v; if(p.y>c.height+10){ p.y=-10; p.x=Math.random()*c.width; } }
@@ -24,14 +23,13 @@
   }
   draw();
 
-  // Chat logic
+  // ===== Chat logic =====
   const SID_KEY='hs_sid', ENDED_KEY='hs_ended', UID_KEY='hs_uid', RESUME_KEY='hs_resume';
   let LOADED=false;
   function newSid(){ return (Date.now().toString(36)+Math.random().toString(36).slice(2,8)); }
 
-  // ✅ 提前初始化 uid
+  // 先初始化 uid，再用于 sidKey()
   let uid=(localStorage.getItem(UID_KEY)||'').trim();
-
   function sidKey(){ return SID_KEY + '_' + (uid||''); }
   let sid=null;
   function ensureSid(){ const k=sidKey(); sid=localStorage.getItem(k)||newSid(); localStorage.setItem(k,sid); }
@@ -45,7 +43,10 @@
   const uidModal=document.getElementById('uidModal'), uidInput=document.getElementById('uidInput'), uidOk=document.getElementById('uidOk');
   const toast=document.getElementById('toast');
   const AGENT_AVATAR='/agent.png';
-  
+
+  // --- typing indicator state ---
+  let TYPING = { el:null, timer:null, dots:1, hideTimer:null };
+
   // ---- secure resume token (per device) ----
   function getResumeToken(){
     let t = localStorage.getItem(RESUME_KEY);
@@ -68,7 +69,7 @@
           else { addMsg((m.me?'(You) ':'')+'[image]', m.me); }
         }
       }); REPLAY=false;
-    }catch(e){/* ignore */}
+    }catch(e){}
   }
   function pushHistory(item){
     try{
@@ -77,10 +78,10 @@
       arr.push(item);
       while(arr.length>200) arr.shift();
       localStorage.setItem(histKey(), JSON.stringify(arr));
-    }catch(e){/* ignore */}
+    }catch(e){}
   }
-  // ---- inline resume pill ----
   function loadHistoryOnce(){ if(LOADED) return; loadHistory(); LOADED=true; }
+
   function showResumePill(){
     const pill = document.createElement('div');
     pill.className = 'resume-pill';
@@ -127,6 +128,39 @@
     wrap.appendChild(box); msgs.appendChild(wrap); msgs.scrollTop=msgs.scrollHeight; if(!REPLAY){ try{ pushHistory({type:'img', url:(me?null:url), caption, me:!!me}); }catch(e){} }
   }
 
+  // ===== 正在输入：显示/隐藏 =====
+  function showTyping(){
+    if (TYPING.el) return;
+    const d = document.createElement('div');
+    d.className = 'msg';
+    const av = document.createElement('img'); av.src = AGENT_AVATAR; av.className = 'avatar'; d.appendChild(av);
+    const span = document.createElement('div'); span.textContent = '...'; d.appendChild(span);
+    msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+    TYPING.el = span;
+    TYPING.dots = 1;
+    TYPING.timer = setInterval(()=>{ TYPING.dots = (TYPING.dots % 3) + 1; TYPING.el.textContent='.'.repeat(TYPING.dots); }, 400);
+    clearTimeout(TYPING.hideTimer); TYPING.hideTimer = setTimeout(hideTyping, 10000); // 10s 兜底
+  }
+  function hideTyping(){
+    if (TYPING.timer) { clearInterval(TYPING.timer); TYPING.timer=null; }
+    if (TYPING.hideTimer) { clearTimeout(TYPING.hideTimer); TYPING.hideTimer=null; }
+    if (TYPING.el) {
+      const wrap = TYPING.el.parentElement;
+      if (wrap && wrap.parentElement) wrap.parentElement.removeChild(wrap);
+    }
+    TYPING.el = null;
+  }
+
+  // 进入聊天只打一次招呼（按会话）
+  function greetOnce(){
+    try{
+      const key = 'hs_greeted_'+sid;
+      if(localStorage.getItem(key)==='1') return;
+      if(msgs.children.length===0){ addMsg('Hello', false); }
+      localStorage.setItem(key,'1');
+    }catch(e){}
+  }
+
   function setEnded(v){
     ended=!!v; localStorage.setItem(ENDED_KEY, ended?'1':'0');
     composer.style.display=ended?'none':'flex';
@@ -136,19 +170,23 @@
   function resetIdle(){
     if(idleTimer) clearTimeout(idleTimer);
     idleTimer=setTimeout(()=>{
-      fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'end',reason:'auto-inactive-15m'})});
-      setEnded(true);
+      if(!ended){
+        ended = true; localStorage.setItem(ENDED_KEY,'1');
+        hideTyping();
+        fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'end',reason:'auto-inactive-15m'})});
+        setEnded(true);
+      }
     }, INACTIVE_MS);
   }
 
   function requireUID(){ composer.style.display='none'; uidModal.style.display='flex'; uidInput.focus(); }
 
-  // ✅ 修复：放宽校验，只要非空即可
+  // UID 校验：必须 8 位数字；错误时提示并不进入
   function unlockWithUID(val){
     uid=(val||'').trim(); 
-    if(!uid){
+    if(!/^\d{8}$/.test(uid)){
       invalidUIDFeedback(); 
-      showToast('failed','请输入UID'); 
+      showToast('failed','INVALID_UID'); 
       return; 
     }
     localStorage.setItem(UID_KEY, uid);
@@ -162,12 +200,21 @@
       composer.style.display='flex'; 
       showToast('connected','Connected'); 
       loadHistory();
+      greetOnce();
+      resetIdle();
     });
-    resetIdle();
   }
+  // 暴露给 HTML 的 onclick
+  window.unlockWithUID = unlockWithUID;
 
-  if(uid){ composer.style.display=ended?'none':'flex';  loadHistory(); if(ended){ showResumePill(); } }
-  else { requireUID(); }
+  if(uid){ 
+    composer.style.display=ended?'none':'flex';  
+    loadHistory(); 
+    if(!ended){ greetOnce(); }
+    if(ended){ showResumePill(); } 
+  } else { 
+    requireUID(); 
+  }
 
   uidOk.addEventListener('click',()=>unlockWithUID(uidInput.value));
   uidInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') unlockWithUID(uidInput.value); });
@@ -176,28 +223,66 @@
   const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
   const wsUrl = scheme + '://' + location.host + '/ws?sid=' + encodeURIComponent(sid) + (g? '&g=' + encodeURIComponent(g):'');
   const ws = new WebSocket(wsUrl);
-  ws.onmessage=(ev)=>{ try{ const data=JSON.parse(ev.data); if(data.type==='FROM_AGENT_TEXT'){ addMsg(data.text,false); if(!REPLAY){ try{ pushHistory({type:'text', text:data.text, me:false}); }catch(e){} } resetIdle(); } else if(data.type==='FROM_AGENT_IMAGE'){ addImage(data.url,data.caption,false); if(!REPLAY){ try{ pushHistory({type:'img', url:data.url, caption:data.caption, me:false}); }catch(e){} } resetIdle(); } }catch(e){} };
+  ws.onmessage=(ev)=>{
+    try{
+      const data=JSON.parse(ev.data);
+      if(data.type==='FROM_AGENT_TEXT'){
+        hideTyping();
+        addMsg(data.text,false);
+        if(!REPLAY){ try{ pushHistory({type:'text', text:data.text, me:false}); }catch(e){} }
+        resetIdle();
+      } else if(data.type==='FROM_AGENT_IMAGE'){
+        hideTyping();
+        addImage(data.url,data.caption,false);
+        if(!REPLAY){ try{ pushHistory({type:'img', url:data.url, caption:data.caption, me:false}); }catch(e){} }
+        resetIdle();
+      }
+    }catch(e){}
+  };
 
-  function send(){ if(ended) return; const text=input.value.trim(); if(!text) return; input.value=''; addMsg(text,true); fetch('/api/send',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,text})}); resetIdle(); }
-  document.getElementById('send').onclick=send; input.addEventListener('keydown',(e)=>{ if(e.key==='Enter') send(); });
+  function send(){
+    if(ended) return;
+    const text=input.value.trim();
+    if(!text) return;
+    input.value='';
+    addMsg(text,true);
+    showTyping(); // 显示“正在输入…”
+    fetch('/api/send',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,text})}).catch(()=>{});
+    resetIdle();
+  }
+  sendBtn.onclick=send;
+  input.addEventListener('keydown',(e)=>{ if(e.key==='Enter') send(); });
 
   fileInput.addEventListener('change',()=>{
     const f=fileInput.files[0]; if(!f) return;
     if(f.size>8*1024*1024){ showToast('toolarge','Too large (8MB)'); fileInput.value=''; return; }
     const fd=new FormData(); fd.append('image',f); fd.append('sessionId',sid); fd.append('caption','');
     addImage(URL.createObjectURL(f),'',true);
+    showTyping(); // 发送图片也显示“正在输入”
     fetch('/api/send-image',{method:'POST',body:fd}).catch(()=>showToast('failed','Failed')).finally(()=> fileInput.value='');
     resetIdle();
   });
 
-  document.getElementById('btn-end').addEventListener('click',()=>{
-    fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'end',reason:'manual'})}).then(()=>setEnded(true));
+  // 结束对话：防多次点击与重复通知
+  btnEnd.addEventListener('click',()=>{
+    if(ended) return;                
+    ended = true;                    
+    localStorage.setItem(ENDED_KEY,'1');
+    btnEnd.style.pointerEvents='none';
+    hideTyping();
+    fetch('/api/status',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({sessionId:sid,action:'end',reason:'manual'})
+    }).finally(()=>setEnded(true));
   });
-  
-})();
 
-function invalidUIDFeedback(){
-  uidInput.classList.remove('shake');
-  uidInput.classList.add('invalid','shake');
-  setTimeout(()=>uidInput.classList.remove('shake'),450);
-}
+  // 提供给内部使用的 UID 错误反馈
+  function invalidUIDFeedback(){
+    try{
+      uidInput.classList.remove('shake');
+      uidInput.classList.add('invalid','shake');
+      setTimeout(()=>uidInput.classList.remove('shake'),450);
+    }catch(e){}
+  }
+})();
