@@ -229,18 +229,25 @@ const FLAGS = {
   CN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'><rect width='30' height='20' fill='#DE2910'/><polygon points='5,2 6,4.9 9,4.9 6.5,6.7 7.6,9.5 5,7.8 2.4,9.5 3.5,6.7 1,4.9 4,4.9' fill='#FFDE00'/><g fill='#FFDE00' transform='translate(5,5)'><polygon transform='rotate(23) translate(3,0)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(45) translate(4,1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(0) translate(4,-1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(-23) translate(3,2)' points='0,-.6 .6,0 0,.6 -.6,0'/></g></svg>`,
 
   // 香港 (繁体中文用香港区旗)
-  HK: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'>
-    <rect width='3' height='2' fill='#BA0000'/>
-    <g transform='translate(1.5,1) scale(.32)' fill='#fff'>
-      <g id='petal'>
-        <path d='M0,-80 C25,-58,25,-20,0,0 C-25,-20,-25,-58,0,-80Z'/>
-      </g>
-      <use href='#petal' transform='rotate(72)'/>
-      <use href='#petal' transform='rotate(144)'/>
-      <use href='#petal' transform='rotate(216)'/>
-      <use href='#petal' transform='rotate(288)'/>
+HK: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <rect width="900" height="600" fill="#BA0000"/>
+  <g transform="translate(450,300) scale(0.7)">
+    <g fill="#fff">
+      <path d="M0,-200 C50,-160 60,-80 0,-40 C-60,-80 -50,-160 0,-200Z"/>
+      <path d="M0,-200 C50,-160 60,-80 0,-40 C-60,-80 -50,-160 0,-200Z" transform="rotate(72)"/>
+      <path d="M0,-200 C50,-160 60,-80 0,-40 C-60,-80 -50,-160 0,-200Z" transform="rotate(144)"/>
+      <path d="M0,-200 C50,-160 60,-80 0,-40 C-60,-80 -50,-160 0,-200Z" transform="rotate(216)"/>
+      <path d="M0,-200 C50,-160 60,-80 0,-40 C-60,-80 -50,-160 0,-200Z" transform="rotate(288)"/>
     </g>
-  </svg>`,
+    <g fill="#BA0000">
+      <polygon points="0,-100 8,-112 20,-113 12,-122 14,-135 0,-128 -14,-135 -12,-122 -20,-113 -8,-112"/>
+      <polygon points="0,-100 8,-112 20,-113 12,-122 14,-135 0,-128 -14,-135 -12,-122 -20,-113 -8,-112" transform="rotate(72)"/>
+      <polygon points="0,-100 8,-112 20,-113 12,-122 14,-135 0,-128 -14,-135 -12,-122 -20,-113 -8,-112" transform="rotate(144)"/>
+      <polygon points="0,-100 8,-112 20,-113 12,-122 14,-135 0,-128 -14,-135 -12,-122 -20,-113 -8,-112" transform="rotate(216)"/>
+      <polygon points="0,-100 8,-112 20,-113 12,-122 14,-135 0,-128 -14,-135 -12,-122 -20,-113 -8,-112" transform="rotate(288)"/>
+    </g>
+  </g>
+</svg>`,
 
   // 印度 (हिन्दी)
   IN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#ffffff'/><rect width='3' height='.6667' y='0' fill='#FF9933'/><rect width='3' height='.6667' y='1.3333' fill='#138808'/><circle cx='1.5' cy='1' r='.18' fill='none' stroke='#000088' stroke-width='.02'/><g stroke='#000088' stroke-width='.01'><line x1='1.5' y1='1' x2='1.5' y2='.82'/><line x1='1.5' y1='1' x2='1.64' y2='.86'/><line x1='1.5' y1='1' x2='1.68' y2='1'/><line x1='1.5' y1='1' x2='1.64' y2='1.14'/><line x1='1.5' y1='1' x2='1.5' y2='1.18'/><line x1='1.5' y1='1' x2='1.36' y2='1.14'/><line x1='1.5' y1='1' x2='1.32' y2='1'/><line x1='1.5' y1='1' x2='1.36' y2='.86'/></g></svg>`,
