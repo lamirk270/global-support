@@ -146,11 +146,19 @@
     const d=document.createElement('div'); d.className='msg'+(me?' me':'');
     if(!me){ const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; d.appendChild(av); }
     const span=document.createElement('div');
-    // 链接化插入（安全）
     span.appendChild(makeLinkifiedFragment(text));
     d.appendChild(span);
     msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; 
     if(!REPLAY){ try{ pushHistory({type:'text', text, me:!!me}); }catch(e){} }
+  }
+
+  function addAgentCard(contentNode){
+    // 和客服消息一致的容器，用于放“选择语言卡片”
+    const d=document.createElement('div'); d.className='msg';
+    const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; d.appendChild(av);
+    const box=document.createElement('div'); box.appendChild(contentNode); d.appendChild(box);
+    msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
+    return d;
   }
 
   function addImage(url,caption,me){
@@ -185,14 +193,97 @@
     TYPING.el = null;
   }
 
-  // 进入聊天只打一次招呼（按会话）
-  function greetOnce(){
-    try{
-      const key = 'hs_greeted_'+sid;
-      if(localStorage.getItem(key)==='1') return;
-      if(msgs.children.length===0){ addMsg('Hello', false); }
-      localStorage.setItem(key,'1');
-    }catch(e){}
+  // ===== 语言选择流程 =====
+  const LANG_KEY_PREFIX = 'hs_lang_'; // 按会话存储选择的语言
+  const LANGS = [
+    { code:'zh-CN', label:'简体中文', flag:'🇨🇳', greet:'你好，有什么可以帮您？' },
+    { code:'en',    label:'English',  flag:'🇺🇸', greet:'Hello! How can I help you?' },
+    { code:'th',    label:'ไทย',      flag:'🇹🇭', greet:'สวัสดีครับ/ค่ะ ต้องการให้ช่วยอะไรบ้างคะ/ครับ?' },
+    { code:'es',    label:'Español',  flag:'🇪🇸', greet:'¡Hola! ¿En qué puedo ayudarte?' },
+    { code:'ar',    label:'العربية',  flag:'🇸🇦', greet:'مرحبًا! كيف يمكنني مساعدتك؟' }
+  ];
+  function langStorageKey(){ return LANG_KEY_PREFIX + sid; }
+
+  function greetByLanguage(code){
+    const found = LANGS.find(l=>l.code===code) || LANGS[0];
+    if(found.code==='ar'){
+      // 简单 RTL 处理：放一个 dir=rtl 的包裹
+      const wrapper = document.createElement('div'); 
+      wrapper.setAttribute('dir','rtl');
+      wrapper.textContent = found.greet;
+      const d=document.createElement('div'); d.className='msg';
+      const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; d.appendChild(av);
+      const box=document.createElement('div'); box.appendChild(wrapper); d.appendChild(box);
+      msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
+      return;
+    }
+    addMsg(found.greet, false);
+  }
+
+  function showLanguagePicker(){
+    // 创建卡片内容
+    const card = document.createElement('div');
+    // 不改你的全局样式，仅用最小内联，保持“气泡”里的自然布局
+    card.style.display='flex';
+    card.style.flexDirection='column';
+    card.style.gap='10px';
+
+    const title = document.createElement('div');
+    title.textContent = 'Choose your Language';
+    title.style.fontWeight='600';
+    title.style.fontSize='14px';
+    card.appendChild(title);
+
+    const btns = document.createElement('div');
+    btns.style.display='grid';
+    btns.style.gridTemplateColumns='repeat(2, minmax(0,1fr))';
+    btns.style.gap='8px';
+
+    LANGS.forEach(l=>{
+      const b=document.createElement('button');
+      b.type='button';
+      b.textContent = `${l.flag} ${l.label}`;
+      b.style.padding='8px 10px';
+      b.style.border='1px solid rgba(120,130,200,.25)';
+      b.style.background='rgba(255,255,255,.08)';
+      b.style.borderRadius='10px';
+      b.style.cursor='pointer';
+      b.style.fontSize='12px';
+      b.style.userSelect='none';
+      b.onmouseenter=()=>{ b.style.background='rgba(255,255,255,.15)'; };
+      b.onmouseleave=()=>{ b.style.background='rgba(255,255,255,.08)'; };
+      b.onclick=()=>{
+        // 点击后：关闭卡片 -> 短加载 -> 欢迎词
+        try{ cardWrap.remove(); }catch(e){}
+        showTyping();
+        setTimeout(()=>{
+          hideTyping();
+          localStorage.setItem(langStorageKey(), l.code);
+          greetByLanguage(l.code);
+        }, 600);
+      };
+      btns.appendChild(b);
+    });
+    card.appendChild(btns);
+
+    const cardWrap = addAgentCard(card);
+    return cardWrap;
+  }
+
+  // 进入聊天：先短加载，再弹语言选择；若当会话已选过语言，则直接按语言问候
+  function startLanguageFlowOnce(){
+    const chosen = localStorage.getItem(langStorageKey());
+    if(chosen){
+      // 已选过，且本会话未结束：直接展示语言问候（避免重复弹窗）
+      greetByLanguage(chosen);
+      return;
+    }
+    // 短加载 -> 弹出选择
+    showTyping();
+    setTimeout(()=>{
+      hideTyping();
+      showLanguagePicker();
+    }, 700);
   }
 
   function setEnded(v){
@@ -234,7 +325,7 @@
       composer.style.display='flex'; 
       showToast('connected','Connected'); 
       loadHistory();
-      greetOnce();
+      startLanguageFlowOnce();   // <<<<<< 启动语言流程
       resetIdle();
     });
   }
@@ -244,7 +335,7 @@
   if(uid){ 
     composer.style.display=ended?'none':'flex';  
     loadHistory(); 
-    if(!ended){ greetOnce(); }
+    if(!ended){ startLanguageFlowOnce(); } // <<<<<< 已登录但未结束时，同样流程
     if(ended){ showResumePill(); } 
   } else { 
     requireUID(); 
