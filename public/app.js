@@ -153,7 +153,6 @@
   }
 
   function addAgentCard(contentNode){
-    // 和客服消息一致的容器，用于放“选择语言卡片”
     const d=document.createElement('div'); d.className='msg';
     const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; d.appendChild(av);
     const box=document.createElement('div'); box.appendChild(contentNode); d.appendChild(box);
@@ -181,7 +180,7 @@
     TYPING.el = span;
     TYPING.dots = 1;
     TYPING.timer = setInterval(()=>{ TYPING.dots = (TYPING.dots % 3) + 1; TYPING.el.textContent='.'.repeat(TYPING.dots); }, 400);
-    clearTimeout(TYPING.hideTimer); TYPING.hideTimer = setTimeout(hideTyping, 10000); // 10s 兜底
+    clearTimeout(TYPING.hideTimer); TYPING.hideTimer = setTimeout(hideTyping, 10000);
   }
   function hideTyping(){
     if (TYPING.timer) { clearInterval(TYPING.timer); TYPING.timer=null; }
@@ -193,80 +192,138 @@
     TYPING.el = null;
   }
 
-  // ===== 语言选择流程 =====
+  // ===== 准确国旗（嵌入 SVG），供语言按钮使用 =====
+  const FLAGS = {
+    // 美国 (English)
+    US: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7410 3900'><rect width='7410' height='3900' fill='#b22234'/><path d='M0,450H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0' fill='#fff'/><rect width='2964' height='2100' fill='#3c3b6e'/><g fill='#fff'><g id='s'><g id='s2'><g id='s3'><g id='s4'><g id='s5'><polygon points='247,90 323,307 118,175 376,175 171,307'/></g><use xlink:href='#s5' x='247'/><use xlink:href='#s5' x='494'/><use xlink:href='#s5' x='741'/><use xlink:href='#s5' x='988'/></g><use xlink:href='#s4' y='210'/><use xlink:href='#s4' y='420'/><use xlink:href='#s4' y='630'/><use xlink:href='#s4' y='840'/><use xlink:href='#s4' y='1050'/></g><use xlink:href='#s3' x='123'/></g><use xlink:href='#s2' y='210'/></g></g></svg>`,
+    // 中国 (简体中文)
+    CN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'><rect width='30' height='20' fill='#DE2910'/><polygon points='5,2 6,4.9 9,4.9 6.5,6.7 7.6,9.5 5,7.8 2.4,9.5 3.5,6.7 1,4.9 4,4.9' fill='#FFDE00'/><g fill='#FFDE00' transform='translate(5,5)'><polygon transform='rotate(23) translate(3,0)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(45) translate(4,1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(0) translate(4,-1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(-23) translate(3,2)' points='0,-.6 .6,0 0,.6 -.6,0'/></g></svg>`,
+    // 台湾 (繁体中文)
+    TW: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#fe0000'/><rect width='1.5' height='1' fill='#000095'/><g transform='translate(.75,.5)'><circle r='.24' fill='#fff'/><g fill='#000095'><polygon points='0,-.34 .05,-.12 .29,-.22 .12,-.05 .22,.19 0,.04 -.22,.19 -.12,-.05 -.29,-.22 -.05,-.12'/></g></g></svg>`,
+    // 印度 (हिन्दी)
+    IN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#ffffff'/><rect width='3' height='.6667' y='0' fill='#FF9933'/><rect width='3' height='.6667' y='1.3333' fill='#138808'/><circle cx='1.5' cy='1' r='.18' fill='none' stroke='#000088' stroke-width='.02'/><g stroke='#000088' stroke-width='.01'><line x1='1.5' y1='1' x2='1.5' y2='.82'/><line x1='1.5' y1='1' x2='1.64' y2='.86'/><line x1='1.5' y1='1' x2='1.68' y2='1'/><line x1='1.5' y1='1' x2='1.64' y2='1.14'/><line x1='1.5' y1='1' x2='1.5' y2='1.18'/><line x1='1.5' y1='1' x2='1.36' y2='1.14'/><line x1='1.5' y1='1' x2='1.32' y2='1'/><line x1='1.5' y1='1' x2='1.36' y2='.86'/></g></svg>`,
+    // 泰国 (ไทย)
+    TH: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#A51931'/><rect y='.3333' width='3' height='1.3334' fill='#fff'/><rect y='.6667' width='3' height='.6666' fill='#2D2A4A'/></svg>`
+  };
+  function flagDataURL(key){
+    const svg = FLAGS[key] || '';
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  // ===== 语言选择（顶级质感：白字、玻璃卡片、柔和动画） =====
   const LANG_KEY_PREFIX = 'hs_lang_'; // 按会话存储选择的语言
   const LANGS = [
-    { code:'zh-CN', label:'简体中文', flag:'🇨🇳', greet:'你好，有什么可以帮您？' },
-    { code:'en',    label:'English',  flag:'🇺🇸', greet:'Hello! How can I help you?' },
-    { code:'th',    label:'ไทย',      flag:'🇹🇭', greet:'สวัสดีครับ/ค่ะ ต้องการให้ช่วยอะไรบ้างคะ/ครับ?' },
-    { code:'es',    label:'Español',  flag:'🇪🇸', greet:'¡Hola! ¿En qué puedo ayudarte?' },
-    { code:'ar',    label:'العربية',  flag:'🇸🇦', greet:'مرحبًا! كيف يمكنني مساعدتك؟' }
+    { code:'en',    label:'English',     flag:'US', greet:'Hello! How can I help you?' },
+    { code:'zh-CN', label:'简体中文',     flag:'CN', greet:'你好，有什么可以帮您？' },
+    { code:'zh-TW', label:'繁體中文',     flag:'TW', greet:'你好，有什麼可以幫您？' },
+    { code:'hi',    label:'हिन्दी',       flag:'IN', greet:'नमस्ते! मैं आपकी कैसे मदद कर सकता/सकती हूँ?' },
+    { code:'th',    label:'ไทย',          flag:'TH', greet:'สวัสดีครับ/ค่ะ มีอะไรให้ช่วยไหมครับ/คะ?' }
   ];
-  function langStorageKey(){ return LANG_KEY_PREFIX + sid; }
+  function langStorageKey(){ return 'hs_lang_' + sid; }
+
+  function addAgentRichCard(titleText, buttons){
+    // 外层容器（与客服气泡一致）
+    const wrap = document.createElement('div');
+    wrap.className='msg';
+    const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; wrap.appendChild(av);
+
+    // 玻璃卡片
+    const card = document.createElement('div');
+    card.style.background='linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06))';
+    card.style.backdropFilter='blur(10px)';
+    card.style.border='1px solid rgba(255,255,255,.18)';
+    card.style.borderRadius='16px';
+    card.style.padding='14px 14px 12px';
+    card.style.boxShadow='0 10px 30px rgba(10,20,60,.25)';
+    card.style.color='#fff';
+    card.style.minWidth='240px';
+    card.style.maxWidth='320px';
+    card.style.animation='langCardIn .35s ease both';
+    // 标题
+    const title = document.createElement('div');
+    title.textContent = titleText;
+    title.style.fontWeight='700';
+    title.style.letterSpacing='.3px';
+    title.style.fontSize='14px';
+    title.style.marginBottom='10px';
+    card.appendChild(title);
+
+    // 按钮区域（grid）
+    const grid = document.createElement('div');
+    grid.style.display='grid';
+    grid.style.gridTemplateColumns='repeat(2,minmax(0,1fr))';
+    grid.style.gap='10px';
+
+    buttons.forEach((b,i)=>{
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.style.display='flex'; btn.style.alignItems='center'; btn.style.gap='8px';
+      btn.style.padding='10px 12px';
+      btn.style.border='1px solid rgba(255,255,255,.22)';
+      btn.style.background='rgba(255,255,255,.08)';
+      btn.style.borderRadius='12px';
+      btn.style.cursor='pointer';
+      btn.style.color='#fff';
+      btn.style.fontSize='12px';
+      btn.style.fontWeight='600';
+      btn.style.letterSpacing='.2px';
+      btn.style.boxShadow='0 6px 16px rgba(10,20,60,.18)';
+      btn.style.transition='transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease';
+      btn.style.animation=`btnFadeIn .3s ease ${0.05*i}s both`;
+
+      const img=document.createElement('img');
+      img.src=flagDataURL(b.flag);
+      img.width=20; img.height=14;
+      img.style.borderRadius='3px'; img.style.boxShadow='0 2px 8px rgba(0,0,0,.25)';
+      btn.appendChild(img);
+
+      const label=document.createElement('span');
+      label.textContent=b.label;
+      btn.appendChild(label);
+
+      btn.onmouseenter=()=>{ btn.style.transform='translateY(-2px)'; btn.style.background='rgba(255,255,255,.14)'; btn.style.borderColor='rgba(255,255,255,.35)'; btn.style.boxShadow='0 10px 24px rgba(10,20,60,.28)'; };
+      btn.onmouseleave=()=>{ btn.style.transform='translateY(0)';     btn.style.background='rgba(255,255,255,.08)'; btn.style.borderColor='rgba(255,255,255,.22)'; btn.style.boxShadow='0 6px 16px rgba(10,20,60,.18)'; };
+
+      btn.onclick = b.onClick;
+      grid.appendChild(btn);
+    });
+
+    card.appendChild(grid);
+    wrap.appendChild(card);
+    msgs.appendChild(wrap); msgs.scrollTop=msgs.scrollHeight;
+
+    // 临时插入关键帧（仅本组件使用）
+    const kf = document.createElement('style');
+    kf.textContent = `
+      @keyframes langCardIn { from { opacity:0; transform: translateY(6px) scale(.98);} to { opacity:1; transform: translateY(0) scale(1);} }
+      @keyframes btnFadeIn { from { opacity:0; transform: translateY(4px);} to { opacity:1; transform: translateY(0);} }
+    `;
+    document.head.appendChild(kf);
+    return wrap;
+  }
 
   function greetByLanguage(code){
     const found = LANGS.find(l=>l.code===code) || LANGS[0];
-    if(found.code==='ar'){
-      // 简单 RTL 处理：放一个 dir=rtl 的包裹
-      const wrapper = document.createElement('div'); 
-      wrapper.setAttribute('dir','rtl');
-      wrapper.textContent = found.greet;
-      const d=document.createElement('div'); d.className='msg';
-      const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; d.appendChild(av);
-      const box=document.createElement('div'); box.appendChild(wrapper); d.appendChild(box);
-      msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight;
-      return;
-    }
+    // RTL 处理：本列表暂不含阿语，均 LTR，直接用 addMsg
     addMsg(found.greet, false);
   }
 
   function showLanguagePicker(){
-    // 创建卡片内容
-    const card = document.createElement('div');
-    // 不改你的全局样式，仅用最小内联，保持“气泡”里的自然布局
-    card.style.display='flex';
-    card.style.flexDirection='column';
-    card.style.gap='10px';
-
-    const title = document.createElement('div');
-    title.textContent = 'Choose your Language';
-    title.style.fontWeight='600';
-    title.style.fontSize='14px';
-    card.appendChild(title);
-
-    const btns = document.createElement('div');
-    btns.style.display='grid';
-    btns.style.gridTemplateColumns='repeat(2, minmax(0,1fr))';
-    btns.style.gap='8px';
-
-    LANGS.forEach(l=>{
-      const b=document.createElement('button');
-      b.type='button';
-      b.textContent = `${l.flag} ${l.label}`;
-      b.style.padding='8px 10px';
-      b.style.border='1px solid rgba(120,130,200,.25)';
-      b.style.background='rgba(255,255,255,.08)';
-      b.style.borderRadius='10px';
-      b.style.cursor='pointer';
-      b.style.fontSize='12px';
-      b.style.userSelect='none';
-      b.onmouseenter=()=>{ b.style.background='rgba(255,255,255,.15)'; };
-      b.onmouseleave=()=>{ b.style.background='rgba(255,255,255,.08)'; };
-      b.onclick=()=>{
-        // 点击后：关闭卡片 -> 短加载 -> 欢迎词
+    // 组装按钮数据与点击逻辑
+    const buttons = LANGS.map(l=>({
+      label: `${l.label}`,
+      flag: l.flag,
+      onClick: ()=>{
         try{ cardWrap.remove(); }catch(e){}
         showTyping();
         setTimeout(()=>{
           hideTyping();
           localStorage.setItem(langStorageKey(), l.code);
           greetByLanguage(l.code);
-        }, 600);
-      };
-      btns.appendChild(b);
-    });
-    card.appendChild(btns);
-
-    const cardWrap = addAgentCard(card);
+        }, 650);
+      }
+    }));
+    const cardWrap = addAgentRichCard('Choose your Language', buttons);
     return cardWrap;
   }
 
@@ -274,16 +331,11 @@
   function startLanguageFlowOnce(){
     const chosen = localStorage.getItem(langStorageKey());
     if(chosen){
-      // 已选过，且本会话未结束：直接展示语言问候（避免重复弹窗）
       greetByLanguage(chosen);
       return;
     }
-    // 短加载 -> 弹出选择
     showTyping();
-    setTimeout(()=>{
-      hideTyping();
-      showLanguagePicker();
-    }, 700);
+    setTimeout(()=>{ hideTyping(); showLanguagePicker(); }, 700);
   }
 
   function setEnded(v){
@@ -325,7 +377,7 @@
       composer.style.display='flex'; 
       showToast('connected','Connected'); 
       loadHistory();
-      startLanguageFlowOnce();   // <<<<<< 启动语言流程
+      startLanguageFlowOnce();
       resetIdle();
     });
   }
@@ -335,7 +387,7 @@
   if(uid){ 
     composer.style.display=ended?'none':'flex';  
     loadHistory(); 
-    if(!ended){ startLanguageFlowOnce(); } // <<<<<< 已登录但未结束时，同样流程
+    if(!ended){ startLanguageFlowOnce(); }
     if(ended){ showResumePill(); } 
   } else { 
     requireUID(); 
@@ -371,7 +423,7 @@
     if(!text) return;
     input.value='';
     addMsg(text,true);
-    showTyping(); // 显示“正在输入…”
+    showTyping();
     fetch('/api/send',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,text})}).catch(()=>{});
     resetIdle();
   }
@@ -383,7 +435,7 @@
     if(f.size>8*1024*1024){ showToast('toolarge','Too large (8MB)'); fileInput.value=''; return; }
     const fd=new FormData(); fd.append('image',f); fd.append('sessionId',sid); fd.append('caption','');
     addImage(URL.createObjectURL(f),'',true);
-    showTyping(); // 发送图片也显示“正在输入”
+    showTyping();
     fetch('/api/send-image',{method:'POST',body:fd}).catch(()=>showToast('failed','Failed')).finally(()=> fileInput.value='');
     resetIdle();
   });
@@ -402,7 +454,6 @@
     }).finally(()=>setEnded(true));
   });
 
-  // 提供给内部使用的 UID 错误反馈
   function invalidUIDFeedback(){
     try{
       uidInput.classList.remove('shake');
