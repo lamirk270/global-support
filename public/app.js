@@ -114,18 +114,52 @@
     else { setTimeout(()=>toast.classList.remove('show'), 2400); }
   }
 
+  // === 将纯文本里的 URL / 邮箱转为 <a>（安全：不执行 HTML，仅拼装节点） ===
+  function makeLinkifiedFragment(text) {
+    const frag = document.createDocumentFragment();
+    const urlRegex = /((https?:\/\/|www\.)[^\s]+)|([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g;
+
+    let last = 0, m;
+    while ((m = urlRegex.exec(text)) !== null) {
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const raw = m[0];
+      let href, label = raw;
+      if (raw.includes('@') && !raw.startsWith('www.')) {
+        href = 'mailto:' + raw;
+      } else {
+        href = raw.startsWith('http') ? raw : ('https://' + raw);
+      }
+      const a = document.createElement('a');
+      a.href = href;
+      a.textContent = label;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.className = 'msg-link';
+      frag.appendChild(a);
+      last = m.index + raw.length;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    return frag;
+  }
+
   function addMsg(text,me){
     const d=document.createElement('div'); d.className='msg'+(me?' me':'');
     if(!me){ const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; d.appendChild(av); }
-    const span=document.createElement('div'); span.textContent=text; d.appendChild(span);
-    msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; if(!REPLAY){ try{ pushHistory({type:'text', text, me:!!me}); }catch(e){} }
+    const span=document.createElement('div');
+    // 链接化插入（安全）
+    span.appendChild(makeLinkifiedFragment(text));
+    d.appendChild(span);
+    msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; 
+    if(!REPLAY){ try{ pushHistory({type:'text', text, me:!!me}); }catch(e){} }
   }
+
   function addImage(url,caption,me){
     const wrap=document.createElement('div'); wrap.className='msg'+(me?' me':'');
     if(!me){ const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; wrap.appendChild(av); }
     const box=document.createElement('div'); const img=document.createElement('img'); img.src=url; img.alt=caption||''; box.appendChild(img);
     if(caption){ const c=document.createElement('div'); c.className='caption'; c.textContent=caption; box.appendChild(c); }
-    wrap.appendChild(box); msgs.appendChild(wrap); msgs.scrollTop=msgs.scrollHeight; if(!REPLAY){ try{ pushHistory({type:'img', url:(me?null:url), caption, me:!!me}); }catch(e){} }
+    wrap.appendChild(box); msgs.appendChild(wrap); msgs.scrollTop=msgs.scrollHeight; 
+    if(!REPLAY){ try{ pushHistory({type:'img', url:(me?null:url), caption, me:!!me}); }catch(e){} }
   }
 
   // ===== 正在输入：显示/隐藏 =====
