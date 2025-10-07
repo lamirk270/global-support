@@ -193,32 +193,77 @@
   }
 
   // ===== 准确国旗（嵌入 SVG），供语言按钮使用 =====
-  const FLAGS = {
-    // 美国 (English)
-    US: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7410 3900'><rect width='7410' height='3900' fill='#b22234'/><path d='M0,450H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0' fill='#fff'/><rect width='2964' height='2100' fill='#3c3b6e'/><g fill='#fff'><g id='s'><g id='s2'><g id='s3'><g id='s4'><g id='s5'><polygon points='247,90 323,307 118,175 376,175 171,307'/></g><use xlink:href='#s5' x='247'/><use xlink:href='#s5' x='494'/><use xlink:href='#s5' x='741'/><use xlink:href='#s5' x='988'/></g><use xlink:href='#s4' y='210'/><use xlink:href='#s4' y='420'/><use xlink:href='#s4' y='630'/><use xlink:href='#s4' y='840'/><use xlink:href='#s4' y='1050'/></g><use xlink:href='#s3' x='123'/></g><use xlink:href='#s2' y='210'/></g></g></svg>`,
-    // 中国 (简体中文)
-    CN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'><rect width='30' height='20' fill='#DE2910'/><polygon points='5,2 6,4.9 9,4.9 6.5,6.7 7.6,9.5 5,7.8 2.4,9.5 3.5,6.7 1,4.9 4,4.9' fill='#FFDE00'/><g fill='#FFDE00' transform='translate(5,5)'><polygon transform='rotate(23) translate(3,0)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(45) translate(4,1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(0) translate(4,-1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(-23) translate(3,2)' points='0,-.6 .6,0 0,.6 -.6,0'/></g></svg>`,
-    // 台湾 (繁体中文)
-    TW: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#fe0000'/><rect width='1.5' height='1' fill='#000095'/><g transform='translate(.75,.5)'><circle r='.24' fill='#fff'/><g fill='#000095'><polygon points='0,-.34 .05,-.12 .29,-.22 .12,-.05 .22,.19 0,.04 -.22,.19 -.12,-.05 -.29,-.22 -.05,-.12'/></g></g></svg>`,
-    // 印度 (हिन्दी)
-    IN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#ffffff'/><rect width='3' height='.6667' y='0' fill='#FF9933'/><rect width='3' height='.6667' y='1.3333' fill='#138808'/><circle cx='1.5' cy='1' r='.18' fill='none' stroke='#000088' stroke-width='.02'/><g stroke='#000088' stroke-width='.01'><line x1='1.5' y1='1' x2='1.5' y2='.82'/><line x1='1.5' y1='1' x2='1.64' y2='.86'/><line x1='1.5' y1='1' x2='1.68' y2='1'/><line x1='1.5' y1='1' x2='1.64' y2='1.14'/><line x1='1.5' y1='1' x2='1.5' y2='1.18'/><line x1='1.5' y1='1' x2='1.36' y2='1.14'/><line x1='1.5' y1='1' x2='1.32' y2='1'/><line x1='1.5' y1='1' x2='1.36' y2='.86'/></g></svg>`,
-    // 泰国 (ไทย)
-    TH: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#A51931'/><rect y='.3333' width='3' height='1.3334' fill='#fff'/><rect y='.6667' width='3' height='.6666' fill='#2D2A4A'/></svg>`
-  };
-  function flagDataURL(key){
-    const svg = FLAGS[key] || '';
-    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-  }
+  // ===== 准确国旗（嵌入 SVG），供语言按钮使用 =====
+const FLAGS = {
+  // 美国 (English)
+  US: `<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 7410 3900'>
+    <rect width='7410' height='3900' fill='#b22234'/>
+    <path d='M0,450H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0zm0,600H7410v300H0' fill='#fff'/>
+    <rect width='2964' height='2100' fill='#3c3b6e'/>
+    <g fill='#fff'>
+      <g id='s'>
+        <g id='s2'>
+          <g id='s3'>
+            <g id='s4'>
+              <g id='s5'>
+                <polygon points='247,90 323,307 118,175 376,175 171,307'/>
+              </g>
+              <use xlink:href='#s5' x='247'/>
+              <use xlink:href='#s5' x='494'/>
+              <use xlink:href='#s5' x='741'/>
+              <use xlink:href='#s5' x='988'/>
+            </g>
+            <use xlink:href='#s4' y='210'/>
+            <use xlink:href='#s4' y='420'/>
+            <use xlink:href='#s4' y='630'/>
+            <use xlink:href='#s4' y='840'/>
+            <use xlink:href='#s4' y='1050'/>
+          </g>
+          <use xlink:href='#s3' x='123'/>
+        </g>
+        <use xlink:href='#s2' y='210'/>
+      </g>
+    </g>
+  </svg>`,
 
-  // ===== 语言选择（顶级质感：白字、玻璃卡片、柔和动画） =====
-  const LANG_KEY_PREFIX = 'hs_lang_'; // 按会话存储选择的语言
-  const LANGS = [
-    { code:'en',    label:'English',     flag:'US', greet:'Hello! How can I help you?' },
-    { code:'zh-CN', label:'简体中文',     flag:'CN', greet:'你好，有什么可以帮您？' },
-    { code:'zh-TW', label:'繁體中文',     flag:'TW', greet:'你好，有什麼可以幫您？' },
-    { code:'hi',    label:'हिन्दी',       flag:'IN', greet:'नमस्ते! मैं आपकी कैसे मदद कर सकता/सकती हूँ?' },
-    { code:'th',    label:'ไทย',          flag:'TH', greet:'สวัสดีครับ/ค่ะ มีอะไรให้ช่วยไหมครับ/คะ?' }
-  ];
+  // 中国 (简体中文)
+  CN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'><rect width='30' height='20' fill='#DE2910'/><polygon points='5,2 6,4.9 9,4.9 6.5,6.7 7.6,9.5 5,7.8 2.4,9.5 3.5,6.7 1,4.9 4,4.9' fill='#FFDE00'/><g fill='#FFDE00' transform='translate(5,5)'><polygon transform='rotate(23) translate(3,0)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(45) translate(4,1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(0) translate(4,-1)' points='0,-.6 .6,0 0,.6 -.6,0'/><polygon transform='rotate(-23) translate(3,2)' points='0,-.6 .6,0 0,.6 -.6,0'/></g></svg>`,
+
+  // 香港 (繁体中文用香港区旗)
+  HK: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'>
+    <rect width='3' height='2' fill='#BA0000'/>
+    <g transform='translate(1.5,1) scale(.32)' fill='#fff'>
+      <g id='petal'>
+        <path d='M0,-80 C25,-58,25,-20,0,0 C-25,-20,-25,-58,0,-80Z'/>
+      </g>
+      <use href='#petal' transform='rotate(72)'/>
+      <use href='#petal' transform='rotate(144)'/>
+      <use href='#petal' transform='rotate(216)'/>
+      <use href='#petal' transform='rotate(288)'/>
+    </g>
+  </svg>`,
+
+  // 印度 (हिन्दी)
+  IN: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#ffffff'/><rect width='3' height='.6667' y='0' fill='#FF9933'/><rect width='3' height='.6667' y='1.3333' fill='#138808'/><circle cx='1.5' cy='1' r='.18' fill='none' stroke='#000088' stroke-width='.02'/><g stroke='#000088' stroke-width='.01'><line x1='1.5' y1='1' x2='1.5' y2='.82'/><line x1='1.5' y1='1' x2='1.64' y2='.86'/><line x1='1.5' y1='1' x2='1.68' y2='1'/><line x1='1.5' y1='1' x2='1.64' y2='1.14'/><line x1='1.5' y1='1' x2='1.5' y2='1.18'/><line x1='1.5' y1='1' x2='1.36' y2='1.14'/><line x1='1.5' y1='1' x2='1.32' y2='1'/><line x1='1.5' y1='1' x2='1.36' y2='.86'/></g></svg>`,
+
+  // 泰国 (ไทย)
+  TH: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='#A51931'/><rect y='.3333' width='3' height='1.3334' fill='#fff'/><rect y='.6667' width='3' height='.6666' fill='#2D2A4A'/></svg>`
+};
+
+function flagDataURL(key){
+  const svg = FLAGS[key] || '';
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+// ===== 语言配置 =====
+const LANGS = [
+  { code:'en',    label:'English',     flag:'US', greet:'Hello! How can I help you?' },
+  { code:'zh-CN', label:'简体中文',     flag:'CN', greet:'你好，有什么可以帮您？' },
+  { code:'zh-TW', label:'繁體中文',     flag:'HK', greet:'你好，有什麼可以幫您？' }, // 改用香港区旗
+  { code:'hi',    label:'हिन्दी',       flag:'IN', greet:'नमस्ते! मैं आपकी कैसे मदद कर सकता/सकती हूँ?' },
+  { code:'th',    label:'ไทย',          flag:'TH', greet:'สวัสดีครับ/ค่ะ มีอะไรให้ช่วยไหมครับ/คะ?' }
+];
+
   function langStorageKey(){ return 'hs_lang_' + sid; }
 
   function addAgentRichCard(titleText, buttons){
