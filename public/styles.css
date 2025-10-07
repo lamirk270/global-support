@@ -32,7 +32,7 @@ body{
   letter-spacing:.2px;
 }
 
-/* Smooth scrolling, with reduced-motion respect */
+/* Smooth scrolling */
 html{ scroll-behavior:smooth; }
 @media (prefers-reduced-motion: reduce){
   *{ animation: none !important; transition: none !important; }
@@ -40,23 +40,15 @@ html{ scroll-behavior:smooth; }
 }
 
 /* =========================================
-   Layout Containers (保持你的结构类名)
+   Layout Containers
    ========================================= */
 .container{
   width:100%;
   max-width:1100px;
   margin:0 auto;
-  padding:18px 18px 26px;
-}
-
-/* 顶部区（如有 logo/标题） */
-.header{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:12px; margin-bottom:12px;
-  color:var(--ink-2);
-}
-.header .title{
-  font-weight:700; font-size:16px; letter-spacing:.3px;
+  padding:12px 18px 26px;
+  position: relative;
+  z-index: 1;
 }
 
 /* =========================================
@@ -64,14 +56,17 @@ html{ scroll-behavior:smooth; }
    ========================================= */
 #msgs, .msgs{
   position:relative;
-  height: calc(100vh - 230px); /* 视窗剩余高度，结合你的页面结构可按需微调 */
+  height: 60vh;
+  max-height: calc(100vh - 220px);
+  min-height: 320px;
   overflow:auto;
-  padding: 14px 8px 18px 8px;
+  padding: 14px 8px 18px;
   scrollbar-width: thin;
   scrollbar-color: rgba(120,130,200,0.45) transparent;
+  z-index: 1;
 }
 
-/* 现代圆角滚动条（WebKit） */
+/* WebKit Scrollbar */
 #msgs::-webkit-scrollbar, .msgs::-webkit-scrollbar{ width:10px; }
 #msgs::-webkit-scrollbar-track, .msgs::-webkit-scrollbar-track{ background: transparent; }
 #msgs::-webkit-scrollbar-thumb, .msgs::-webkit-scrollbar-thumb{
@@ -82,7 +77,7 @@ html{ scroll-behavior:smooth; }
 }
 #msgs::-webkit-scrollbar-thumb:hover, .msgs::-webkit-scrollbar-thumb:hover{ background: rgba(120,130,200,0.55); }
 
-/* 单条消息容器（与原结构兼容） */
+/* 消息条目 */
 .msg{
   display:flex; align-items:flex-start; gap:10px;
   margin: 10px 6px;
@@ -92,15 +87,11 @@ html{ scroll-behavior:smooth; }
   from{ opacity:0; transform: translateY(4px) scale(.98); }
   to{ opacity:1; transform: translateY(0) scale(1); }
 }
-
-/* 客服头像（保持你的 /agent.png） */
 .msg .avatar{
   width:26px; height:26px; border-radius: 50%;
   box-shadow: var(--shadow-soft);
   flex:0 0 auto;
 }
-
-/* 消息“气泡” */
 .msg > div{
   background: linear-gradient(180deg, var(--glass-1), var(--glass-2));
   border: 1px solid var(--line-1);
@@ -111,11 +102,7 @@ html{ scroll-behavior:smooth; }
   word-break: break-word;
   max-width: 76ch;
 }
-
-/* 我方消息（me） */
-.msg.me{
-  justify-content:flex-end;
-}
+.msg.me{ justify-content:flex-end; }
 .msg.me > div{
   background: linear-gradient(180deg, rgba(110,169,255,0.22), rgba(139,92,255,0.20));
   border: 1px solid rgba(130,150,255,0.35);
@@ -123,17 +110,11 @@ html{ scroll-behavior:smooth; }
   box-shadow: 0 8px 24px rgba(110,169,255,.18);
 }
 .msg.me .avatar{ display:none; }
-
-/* 图片消息（保持原 DOM，不改变结构） */
 .msg img{
   display:block; max-width: 48vw; height:auto; border-radius: 12px;
   box-shadow: var(--shadow-2);
 }
-@media (max-width: 960px){
-  .msg img{ max-width: 76vw; }
-}
-
-/* 链接样式（已在 JS 链接化） */
+@media (max-width: 960px){ .msg img{ max-width: 76vw; } }
 .msg .msg-link{
   color:var(--ink-1);
   text-decoration:none;
@@ -145,7 +126,7 @@ html{ scroll-behavior:smooth; }
   border-color: rgba(110,169,255,.8);
 }
 
-/* “Resume” pill（继续会话） */
+/* Resume pill */
 .resume-pill{
   margin: 8px auto 0;
   display: inline-flex; align-items:center; gap:8px;
@@ -167,7 +148,7 @@ html{ scroll-behavior:smooth; }
 .resume-pill svg{ width:14px; height:14px; fill: currentColor; opacity:.9; }
 
 /* =========================================
-   Composer（输入区）
+   Composer
    ========================================= */
 #composer{
   display:flex; align-items:center; gap:10px;
@@ -175,9 +156,10 @@ html{ scroll-behavior:smooth; }
   border-top: 1px solid var(--line-2);
   background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.14));
   backdrop-filter: blur(var(--blur));
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
 }
-
-/* 输入框 */
 #input{
   flex:1 1 auto;
   background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
@@ -186,42 +168,30 @@ html{ scroll-behavior:smooth; }
   padding: 12px 12px;
   border-radius: var(--radius-md);
   outline: none;
-  transition: box-shadow .2s ease, border-color .2s ease, background .2s ease;
 }
 #input::placeholder{ color: var(--ink-3); }
 #input:focus{ box-shadow: var(--focus); border-color: rgba(110,169,255,.45); }
-
-/* 发送按钮、结束按钮风格一致 */
 #send, #btn-end{
-  flex:0 0 auto;
   appearance:none; border:none; cursor:pointer;
   padding: 10px 14px;
   border-radius: var(--radius-md);
-  color:#fff; font-weight:700; letter-spacing:.2px;
+  color:#fff; font-weight:700;
   background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
   box-shadow: 0 10px 24px rgba(110,169,255,.25);
-  transition: transform .16s ease, box-shadow .2s ease, opacity .2s ease, filter .2s ease;
 }
 #btn-end{
   background: linear-gradient(90deg, #ff6a7a, #ff3d5e);
   box-shadow: 0 10px 24px rgba(255,90,107,.25);
 }
-#send:hover, #btn-end:hover{ transform: translateY(-1px); filter: brightness(1.03); }
-#send:active, #btn-end:active{ transform: translateY(0); filter: brightness(.98); }
-#btn-end[disabled], #send[disabled]{ opacity:.55; cursor: not-allowed; }
-
-/* 文件上传 input 仍使用原结构：尽量弱化其原生样式 */
-input[type="file"]{
-  color: var(--ink-2);
-}
 
 /* =========================================
-   UID 弹窗（保持结构，升级视觉）
+   UID Modal
    ========================================= */
 #uidModal{
-  position: fixed; inset:0; display:none;
+  position: fixed; inset:0;
+  display:none;
   align-items:center; justify-content:center;
-  background: rgba(5,8,20,.35);
+  background: rgba(5,8,20,.38);
   backdrop-filter: blur(4px);
   z-index: 30;
 }
@@ -234,51 +204,27 @@ input[type="file"]{
   min-width: 280px; max-width: 360px;
   color: var(--ink-1);
 }
-#uidModal h3{
-  margin:0 0 10px; font-size:16px; font-weight:800; letter-spacing:.3px; color:#fff;
-}
 #uidInput{
-  width:100%;
-  padding: 12px 12px;
+  width:100%; padding: 12px;
   border-radius: var(--radius-md);
   border:1px solid var(--line-1);
   background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
   color:#fff;
-  outline:none;
-  transition: box-shadow .2s ease, border-color .2s ease, background .2s ease;
 }
-#uidInput::placeholder{ color: var(--ink-3); }
-#uidInput:focus{ box-shadow: var(--focus); border-color: rgba(110,169,255,.45); }
 #uidOk{
   margin-top:10px; width:100%;
-  appearance:none; border:none; cursor:pointer;
+  border:none; cursor:pointer;
   background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
-  color:#fff; font-weight:800; letter-spacing:.3px;
+  color:#fff; font-weight:800;
   padding:10px 12px; border-radius: var(--radius-md);
   box-shadow: 0 10px 24px rgba(110,169,255,.25);
-  transition: transform .16s ease, box-shadow .2s ease, filter .2s ease;
 }
-#uidOk:hover{ transform: translateY(-1px); filter: brightness(1.03); }
-#uidOk:active{ transform: translateY(0); filter: brightness(.98); }
-
-/* UID 错误时的小动画（与你的 JS 呼应） */
-#uidInput.invalid{
-  border-color: #ff5a6b !important;
-  box-shadow: 0 0 0 2px rgba(255,90,107,.35);
-}
-@keyframes shake{
-  10%, 90% { transform: translateX(-1px); }
-  20%, 80% { transform: translateX(2px); }
-  30%, 50%, 70% { transform: translateX(-4px); }
-  40%, 60% { transform: translateX(4px); }
-}
-#uidInput.shake{ animation: shake .45s ease; }
 
 /* =========================================
-   Toast（与你的 JS 图标输出兼容）
+   Toast
    ========================================= */
 #toast{
-  position: fixed; left:50%; bottom: 26px; transform: translateX(-50%) translateY(12px);
+  position: fixed; left:50%; bottom: 26px; transform: translateX(-50%);
   display:flex; align-items:center; gap:8px;
   padding: 10px 12px;
   color:#fff;
@@ -289,30 +235,13 @@ input[type="file"]{
   opacity:0; pointer-events:none;
   z-index: 40;
 }
-#toast.show{ opacity:1; pointer-events:auto; transform: translateX(-50%) translateY(0); transition: opacity .18s ease, transform .18s ease; }
+#toast.show{ opacity:1; pointer-events:auto; transition: opacity .18s ease, transform .18s ease; }
 
 /* =========================================
-   语言选择卡片：JS 已内联样式，这里做通用补充
+   Hotfix: Background layering
    ========================================= */
-.msg button{
-  color:#fff;
+#bg{
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 0 !important;
 }
-.msg button:focus{ outline:none; box-shadow: var(--focus); }
-
-/* =========================================
-   自适应
-   ========================================= */
-@media (max-width: 720px){
-  #msgs, .msgs{ height: calc(100vh - 210px); }
-  .msg > div{ max-width: 86vw; }
-}
-
-/* =========================================
-   页面滚动条（右侧系统）
-   ========================================= */
-::-webkit-scrollbar{ width:10px; }
-::-webkit-scrollbar-thumb{
-  background: rgba(120,130,200,0.28);
-  border-radius: 8px;
-}
-::-webkit-scrollbar-thumb:hover{ background: rgba(120,130,200,0.45); }
