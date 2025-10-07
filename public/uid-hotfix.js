@@ -98,3 +98,128 @@
     if(t && t.id==='uidOk'){ window.unlockWithUID && window.unlockWithUID((document.getElementById('uidInput')||{}).value); }
   }, true);
 })();
+
+// --- v8.9h hotfix extension: send fallback + auto greeting ---
+(function(){
+  var GREET_KEY = 'hs_greeted_once_v89h';
+  var SID_KEY = 'hs_sid';
+  function qs(id){ return document.getElementById(id); }
+  function val(el){ return (el && typeof el.value==='string') ? el.value : ''; }
+  function safeText(s){ return (s==null?'':String(s)).trim(); }
+
+  function appendAgentHelloOnce(){
+    try{
+      if(localStorage.getItem(GREET_KEY)==='1') return;
+      var msgs = qs('msgs');
+      if(!msgs) return;
+      // Only greet if chat view is visible and empty-ish
+      var comp = qs('composer');
+      var visible = comp && getComputedStyle(comp).display!=='none';
+      if(!visible) return;
+      // Avoid double-greet if messages already exist
+      if(msgs.children && msgs.children.length>0) { localStorage.setItem(GREET_KEY,'1'); return; }
+
+      var wrap = document.createElement('div');
+      wrap.className = 'msg'; // agent style (no "me")
+      var av = document.createElement('img');
+      av.className = 'avatar';
+      av.src = '/agent.png'; // keep original asset path
+      wrap.appendChild(av);
+      var span = document.createElement('div');
+      span.textContent = 'Hello';
+      wrap.appendChild(span);
+      msgs.appendChild(wrap);
+      msgs.scrollTop = msgs.scrollHeight;
+      localStorage.setItem(GREET_KEY,'1');
+    }catch(e){ /* silent */ }
+  }
+
+  function sendFallback(){
+    var input = qs('input');
+    var btn = qs('send');
+    var msgs = qs('msgs');
+    var composer = qs('composer');
+    if(!input || !btn || !msgs || !composer) return;
+
+    function addUserBubble(text){
+      var wrap = document.createElement('div');
+      wrap.className = 'msg me';
+      var span = document.createElement('div');
+      span.textContent = text;
+      wrap.appendChild(span);
+      msgs.appendChild(wrap);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+    function addAgentBubble(text){
+      var wrap = document.createElement('div');
+      wrap.className = 'msg';
+      var av = document.createElement('img'); av.className='avatar'; av.src='/agent.png'; wrap.appendChild(av);
+      var span = document.createElement('div'); span.textContent=text; wrap.appendChild(span);
+      msgs.appendChild(wrap);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    // Keydown: Enter to send (Shift+Enter = newline)
+    if(!input.__hfix_enter){
+      input.addEventListener('keydown', function(e){
+        if(e.key==='Enter' && !e.shiftKey){
+          e.preventDefault();
+          (qs('send')||{}).click && qs('send').click();
+        }
+      });
+      input.__hfix_enter = true;
+    }
+
+    // If original onclick missing, add a safe fallback that posts to /api/send
+    if(!btn.__hfix_bound && !btn.onclick){
+      btn.addEventListener('click', function(){
+        var text = safeText(val(input));
+        if(!text) return;
+        input.value = '';
+        addUserBubble(text);
+        // POST to backend; rely on server websocket to echo agent reply,
+        // but also try to render reply if returned directly.
+        var sid = (localStorage.getItem(SID_KEY)||'').trim();
+        try{
+          fetch('/api/send', {
+            method:'POST',
+            headers:{'content-type':'application/json'},
+            body: JSON.stringify({ sessionId: sid, text: text })
+          }).then(function(r){ return r.json().catch(function(){return null;}); })
+            .then(function(res){
+              if(res && res.reply){ addAgentBubble(String(res.reply)); }
+            }).catch(function(){});
+        }catch(e){ /* ignore */ }
+      }, true); // capture to run even if bubbling handlers fail
+      btn.__hfix_bound = true;
+    }
+  }
+
+  // After unlocking with UID (called by inline onclick in HTML), ensure bindings and greeting
+  var _origUnlock = window.unlockWithUID;
+  window.unlockWithUID = function(v){
+    try{
+      localStorage.removeItem(GREET_KEY);
+    }catch(e){}
+    if(typeof _origUnlock === 'function'){
+      _origUnlock(v);
+      // Defer to allow app.js to toggle views
+      setTimeout(function(){
+        sendFallback();
+        appendAgentHelloOnce();
+      }, 60);
+    }
+  };
+
+  // Also try on DOM ready (in case UID is already present in storage)
+  function ready(){
+    setTimeout(function(){
+      sendFallback();
+      appendAgentHelloOnce();
+    }, 120);
+  }
+  if(document.readyState!=='loading') ready();
+  else document.addEventListener('DOMContentLoaded', ready);
+
+})();
+// --- end hotfix extension ---
