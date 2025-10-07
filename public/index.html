@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>88U</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+  <canvas id="bg" class="bg"></canvas>
+
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">
+        <img src="/logo.png" alt="88U" class="logo"/>
+        <strong>88U</strong>
+      </div>
+      <div class="actions">
+        <button id="btn-end" class="ic" aria-label="End" title="">
+          <svg viewBox="0 0 24 24"><path d="M12 3v7"/><path d="M6.2 7.6a8 8 0 1 0 11.6.1"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="card">
+      <section id="msgs" class="msgs"></section>
+      <footer id="composer" class="composer">
+        <label class="btn attach">
+          <input type="file" id="file" accept="image/*" hidden/>
+          <svg viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l2-2a5 5 0 1 0-7-7l-1.6 1.6"/><path d="M14 10a5 5 0 0 0-7 0l-2 2a5 5 0 1 0 7 7l1.6-1.6"/></svg>
+        </label>
+        <input id="input" class="input" placeholder="..."/>
+        <button id="send" class="btn send">
+          <svg viewBox="0 0 24 24"><path d="M4 12L20 4l-8 16-2-6-6-2z"/></svg>
+        </button>
+      </footer>
+    </main>
+  </div>
+
+  <!-- UID -->
+  <div id="uidModal" class="modal">
+    <div class="panel panel-uid">
+      <div class="uid-title">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+        <span>UID</span>
+      </div>
+      <div class="row uid-row">
+        <input id="uidInput" placeholder="UID"/ onkeydown="if(event.key===\'Enter\' && window.unlockWithUID){unlockWithUID(this.value)}">
+        <button id="uidOk" class="uid-btn" type="button" onclick="if(window.unlockWithUID){unlockWithUID(document.getElementById(\'uidInput\').value)}">
+          <svg viewBox="0 0 24 24"><path d="M4 12L20 4l-8 16-2-6-6-2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="/app.js?v=8.6"></script>
+  <script src="/uid-hotfix.js?v=8.9h"></script>
+</body>
+</html>
