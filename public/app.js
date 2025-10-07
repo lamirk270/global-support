@@ -113,11 +113,91 @@
     else { setTimeout(()=>toast.classList.remove('show'), 2400); }
   }
 
-  // ... （后面部分逻辑保持不变）
+  function addMsg(text,me){
+    const d=document.createElement('div'); d.className='msg'+(me?' me':'');
+    if(!me){ const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; d.appendChild(av); }
+    const span=document.createElement('div'); span.textContent=text; d.appendChild(span);
+    msgs.appendChild(d); msgs.scrollTop=msgs.scrollHeight; if(!REPLAY){ try{ pushHistory({type:'text', text, me:!!me}); }catch(e){} }
+  }
+  function addImage(url,caption,me){
+    const wrap=document.createElement('div'); wrap.className='msg'+(me?' me':'');
+    if(!me){ const av=document.createElement('img'); av.src=AGENT_AVATAR; av.className='avatar'; wrap.appendChild(av); }
+    const box=document.createElement('div'); const img=document.createElement('img'); img.src=url; img.alt=caption||''; box.appendChild(img);
+    if(caption){ const c=document.createElement('div'); c.className='caption'; c.textContent=caption; box.appendChild(c); }
+    wrap.appendChild(box); msgs.appendChild(wrap); msgs.scrollTop=msgs.scrollHeight; if(!REPLAY){ try{ pushHistory({type:'img', url:(me?null:url), caption, me:!!me}); }catch(e){} }
+  }
+
+  function setEnded(v){
+    ended=!!v; localStorage.setItem(ENDED_KEY, ended?'1':'0');
+    composer.style.display=ended?'none':'flex';
+    if(ended){ showToast('ended','Session ended'); showResumePill(); }
+  }
+
+  function resetIdle(){
+    if(idleTimer) clearTimeout(idleTimer);
+    idleTimer=setTimeout(()=>{
+      fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'end',reason:'auto-inactive-15m'})});
+      setEnded(true);
+    }, INACTIVE_MS);
+  }
+
+  function requireUID(){ composer.style.display='none'; uidModal.style.display='flex'; uidInput.focus(); }
+
+  // ✅ 修复：放宽校验，只要非空即可
+  function unlockWithUID(val){
+    uid=(val||'').trim(); 
+    if(!uid){
+      invalidUIDFeedback(); 
+      showToast('failed','请输入UID'); 
+      return; 
+    }
+    localStorage.setItem(UID_KEY, uid);
+    uidModal.style.display='none';
+    composer.style.display='flex';
+    fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'uid',uid})}).then(()=>{
+      return fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'continue'})});
+    }).then(()=>{
+      localStorage.setItem(ENDED_KEY,'0'); 
+      setEnded(false); 
+      composer.style.display='flex'; 
+      showToast('connected','Connected'); 
+      loadHistory();
+    });
+    resetIdle();
+  }
+
+  if(uid){ composer.style.display=ended?'none':'flex';  loadHistory(); if(ended){ showResumePill(); } }
+  else { requireUID(); }
+
+  uidOk.addEventListener('click',()=>unlockWithUID(uidInput.value));
+  uidInput.addEventListener('keydown',(e)=>{ if(e.key==='Enter') unlockWithUID(uidInput.value); });
+
+  const params=new URLSearchParams(location.search); const g=params.get('g')||'';
+  const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = scheme + '://' + location.host + '/ws?sid=' + encodeURIComponent(sid) + (g? '&g=' + encodeURIComponent(g):'');
+  const ws = new WebSocket(wsUrl);
+  ws.onmessage=(ev)=>{ try{ const data=JSON.parse(ev.data); if(data.type==='FROM_AGENT_TEXT'){ addMsg(data.text,false); if(!REPLAY){ try{ pushHistory({type:'text', text:data.text, me:false}); }catch(e){} } resetIdle(); } else if(data.type==='FROM_AGENT_IMAGE'){ addImage(data.url,data.caption,false); if(!REPLAY){ try{ pushHistory({type:'img', url:data.url, caption:data.caption, me:false}); }catch(e){} } resetIdle(); } }catch(e){} };
+
+  function send(){ if(ended) return; const text=input.value.trim(); if(!text) return; input.value=''; addMsg(text,true); fetch('/api/send',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,text})}); resetIdle(); }
+  document.getElementById('send').onclick=send; input.addEventListener('keydown',(e)=>{ if(e.key==='Enter') send(); });
+
+  fileInput.addEventListener('change',()=>{
+    const f=fileInput.files[0]; if(!f) return;
+    if(f.size>8*1024*1024){ showToast('toolarge','Too large (8MB)'); fileInput.value=''; return; }
+    const fd=new FormData(); fd.append('image',f); fd.append('sessionId',sid); fd.append('caption','');
+    addImage(URL.createObjectURL(f),'',true);
+    fetch('/api/send-image',{method:'POST',body:fd}).catch(()=>showToast('failed','Failed')).finally(()=> fileInput.value='');
+    resetIdle();
+  });
+
+  document.getElementById('btn-end').addEventListener('click',()=>{
+    fetch('/api/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sessionId:sid,action:'end',reason:'manual'})}).then(()=>setEnded(true));
+  });
+  
 })();
+
 function invalidUIDFeedback(){
   uidInput.classList.remove('shake');
   uidInput.classList.add('invalid','shake');
   setTimeout(()=>uidInput.classList.remove('shake'),450);
 }
-
